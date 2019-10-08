@@ -10,18 +10,17 @@ declare(strict_types = 1);
 namespace Ergonode\Product\Persistence\Dbal\Projector;
 
 use Doctrine\DBAL\Connection;
-use Ergonode\Attribute\Domain\Entity\AttributeId;
 use Ergonode\Core\Domain\Entity\AbstractId;
 use Ergonode\EventSourcing\Infrastructure\DomainEventInterface;
 use Ergonode\EventSourcing\Infrastructure\Exception\UnsupportedEventException;
 use Ergonode\EventSourcing\Infrastructure\Projector\DomainEventProjectorInterface;
-use Ergonode\Product\Domain\Event\ProductValueRemoved;
+use Ergonode\Product\Domain\Event\ProductDeletedEvent;
 
 /**
  */
-class ProductValueRemovedEventProjector implements DomainEventProjectorInterface
+class ProductDeletedEventProjector implements DomainEventProjectorInterface
 {
-    private const TABLE_PRODUCT_VALUE = 'product_value';
+    private const TABLE = 'product';
 
     /**
      * @var Connection
@@ -41,7 +40,7 @@ class ProductValueRemovedEventProjector implements DomainEventProjectorInterface
      */
     public function support(DomainEventInterface $event): bool
     {
-        return $event instanceof ProductValueRemoved;
+        return $event instanceof ProductDeletedEvent;
     }
 
     /**
@@ -49,27 +48,14 @@ class ProductValueRemovedEventProjector implements DomainEventProjectorInterface
      */
     public function projection(AbstractId $aggregateId, DomainEventInterface $event): void
     {
-        if (!$event instanceof ProductValueRemoved) {
-            throw new UnsupportedEventException($event, ProductValueRemoved::class);
+        if (!$event instanceof ProductDeletedEvent) {
+            throw new UnsupportedEventException($event, ProductDeletedEvent::class);
         }
 
-        $this->delete($aggregateId->getValue(), AttributeId::fromKey($event->getAttributeCode())->getValue());
-    }
-
-    /**
-     * @param string $productId
-     * @param string $attributeId
-     *
-     * @throws \Doctrine\DBAL\DBALException
-     * @throws \Doctrine\DBAL\Exception\InvalidArgumentException
-     */
-    private function delete(string $productId, string $attributeId): void
-    {
         $this->connection->delete(
-            self::TABLE_PRODUCT_VALUE,
+            self::TABLE,
             [
-                'product_id' => $productId,
-                'attribute_id' => $attributeId,
+                'id' => $aggregateId->getValue(),
             ]
         );
     }
