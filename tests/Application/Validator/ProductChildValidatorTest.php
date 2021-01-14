@@ -7,12 +7,12 @@
 
 declare(strict_types=1);
 
-namespace Ergonode\Product\Tests\Infrastructure\Validator;
+namespace Ergonode\Product\Tests\Application\Validator;
 
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Test\ConstraintValidatorTestCase;
-use Ergonode\Product\Infrastructure\Validator\ProductChildValidator;
-use Ergonode\Product\Infrastructure\Validator\ProductChild;
+use Ergonode\Product\Application\Validator\ProductChildValidator;
+use Ergonode\Product\Application\Validator\ProductChild;
 use Ramsey\Uuid\Uuid;
 use Ergonode\SharedKernel\Domain\Aggregate\ProductId;
 use Ergonode\Product\Application\Model\Product\Relation\ProductChildFormModel;

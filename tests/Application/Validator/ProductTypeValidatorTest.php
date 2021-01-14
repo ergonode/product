@@ -7,12 +7,12 @@
 
 declare(strict_types=1);
 
-namespace Ergonode\Product\Tests\Infrastructure\Validator;
+namespace Ergonode\Product\Tests\Application\Validator;
 
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Test\ConstraintValidatorTestCase;
-use Ergonode\Product\Infrastructure\Validator\ProductTypeValidator;
-use Ergonode\Product\Infrastructure\Validator\ProductType;
+use Ergonode\Product\Application\Validator\ProductTypeValidator;
+use Ergonode\Product\Application\Validator\ProductType;
 use PHPUnit\Framework\MockObject\MockObject;
 use Ramsey\Uuid\Uuid;
 use Ergonode\Product\Domain\Repository\ProductRepositoryInterface;

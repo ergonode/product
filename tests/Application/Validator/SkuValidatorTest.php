@@ -7,10 +7,10 @@
 
 declare(strict_types=1);
 
-namespace Ergonode\Product\Tests\Infrastructure\Validator;
+namespace Ergonode\Product\Tests\Application\Validator;
 
-use Ergonode\Product\Infrastructure\Validator\Sku;
-use Ergonode\Product\Infrastructure\Validator\SkuValidator;
+use Ergonode\Product\Application\Validator\Sku;
+use Ergonode\Product\Application\Validator\SkuValidator;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Test\ConstraintValidatorTestCase;
 

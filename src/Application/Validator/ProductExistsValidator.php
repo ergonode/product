@@ -7,21 +7,21 @@
 
 declare(strict_types=1);
 
-namespace Ergonode\Product\Infrastructure\Validator;
+namespace Ergonode\Product\Application\Validator;
 
-use Ergonode\Product\Domain\Query\ProductBindingQueryInterface;
-use Ergonode\SharedKernel\Domain\Aggregate\ProductId;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;
+use Ergonode\Product\Domain\Repository\ProductRepositoryInterface;
+use Ergonode\SharedKernel\Domain\Aggregate\ProductId;
 
-class ProductNoBindingsValidator extends ConstraintValidator
+class ProductExistsValidator extends ConstraintValidator
 {
-    private ProductBindingQueryInterface $query;
+    private ProductRepositoryInterface $repository;
 
-    public function __construct(ProductBindingQueryInterface $query)
+    public function __construct(ProductRepositoryInterface $repository)
     {
-        $this->query = $query;
+        $this->repository = $repository;
     }
 
     /**
@@ -30,8 +30,8 @@ class ProductNoBindingsValidator extends ConstraintValidator
      */
     public function validate($value, Constraint $constraint): void
     {
-        if (!$constraint instanceof ProductNoBindings) {
-            throw new UnexpectedTypeException($constraint, ProductNoBindings::class);
+        if (!$constraint instanceof ProductExists) {
+            throw new UnexpectedTypeException($constraint, ProductExists::class);
         }
 
         if (null === $value || '' === $value) {
@@ -44,11 +44,13 @@ class ProductNoBindingsValidator extends ConstraintValidator
 
         $value = (string) $value;
 
-        if (ProductId::isValid($value)) {
-            $bindings = $this->query->getBindings(new ProductId($value));
+        if (!ProductId::isValid($value)) {
+            return;
         }
 
-        if (empty($bindings)) {
+        $result = $this->repository->exists(new ProductId($value));
+
+        if (!$result) {
             $this->context->buildViolation($constraint->message)
                 ->addViolation();
         }

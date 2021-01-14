@@ -7,11 +7,11 @@
 
 declare(strict_types=1);
 
-namespace Ergonode\Product\Tests\Infrastructure\Validator;
+namespace Ergonode\Product\Tests\Application\Validator;
 
 use Ergonode\Product\Domain\Query\ProductBindingQueryInterface;
-use Ergonode\Product\Infrastructure\Validator\ProductNoBindings;
-use Ergonode\Product\Infrastructure\Validator\ProductNoBindingsValidator;
+use Ergonode\Product\Application\Validator\ProductNoBindings;
+use Ergonode\Product\Application\Validator\ProductNoBindingsValidator;
 use PHPUnit\Framework\MockObject\MockObject;
 use Ramsey\Uuid\Uuid;
 use Symfony\Component\Validator\Constraint;
