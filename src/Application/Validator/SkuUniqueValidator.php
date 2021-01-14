@@ -7,15 +7,14 @@
 
 declare(strict_types=1);
 
-namespace Ergonode\Product\Infrastructure\Validator;
+namespace Ergonode\Product\Application\Validator;
 
+use Ergonode\Product\Domain\Query\ProductQueryInterface;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;
-use Ergonode\Product\Domain\ValueObject\Sku;
-use Ergonode\Product\Domain\Query\ProductQueryInterface;
 
-class ProductSkuExistsValidator extends ConstraintValidator
+class SkuUniqueValidator extends ConstraintValidator
 {
     private ProductQueryInterface $query;
 
@@ -25,13 +24,13 @@ class ProductSkuExistsValidator extends ConstraintValidator
     }
 
     /**
-     * @param mixed                    $value
-     * @param ProductExists|Constraint $constraint
+     * @param mixed                $value
+     * @param SkuUnique|Constraint $constraint
      */
     public function validate($value, Constraint $constraint): void
     {
-        if (!$constraint instanceof ProductSkuExists) {
-            throw new UnexpectedTypeException($constraint, ProductSkuExists::class);
+        if (!$constraint instanceof SkuUnique) {
+            throw new UnexpectedTypeException($constraint, SkuUnique::class);
         }
 
         if (null === $value || '' === $value) {
@@ -44,14 +43,16 @@ class ProductSkuExistsValidator extends ConstraintValidator
 
         $value = (string) $value;
 
-        if (!Sku::isValid($value)) {
+        if (!\Ergonode\Product\Domain\ValueObject\Sku::isValid($value)) {
             return;
         }
 
-        $result = $this->query->findProductIdBySku(new Sku($value));
+        $sku = new \Ergonode\Product\Domain\ValueObject\Sku($value);
+        $result = $this->query->findProductIdBySku($sku);
 
-        if (!$result) {
+        if ($result) {
             $this->context->buildViolation($constraint->message)
+                ->setParameter('{{ value }}', $value)
                 ->addViolation();
         }
     }

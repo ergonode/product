@@ -7,14 +7,14 @@
 
 declare(strict_types=1);
 
-namespace Ergonode\Product\Infrastructure\Validator;
+namespace Ergonode\Product\Application\Validator;
 
 use Symfony\Component\Validator\Constraint;
 
 /**
  * @Annotation
  */
-class AvailableProductType extends Constraint
+class SkuUnique extends Constraint
 {
-    public string $message = 'Product "{{ value }}" type does not exist.';
+    public string $message = 'Sku {{ value }} already exists.';
 }

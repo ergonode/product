@@ -7,7 +7,7 @@
 
 declare(strict_types=1);
 
-namespace Ergonode\Product\Infrastructure\Validator;
+namespace Ergonode\Product\Application\Validator;
 
 use Ergonode\Product\Application\Provider\ProductSupportProviderInterface;
 use Symfony\Component\Validator\Constraint;
@@ -17,7 +17,7 @@ use Symfony\Component\Validator\Exception\UnexpectedTypeException;
 /**
  * @Annotation
  */
-class AvailableProductTypeValidator extends ConstraintValidator
+class ProductTypeExistsValidator extends ConstraintValidator
 {
     private ProductSupportProviderInterface $productSupportProvider;
 
@@ -31,8 +31,8 @@ class AvailableProductTypeValidator extends ConstraintValidator
      */
     public function validate($value, Constraint $constraint): void
     {
-        if (!$constraint instanceof AvailableProductType) {
-            throw new UnexpectedTypeException($constraint, AvailableProductType::class);
+        if (!$constraint instanceof ProductTypeExists) {
+            throw new UnexpectedTypeException($constraint, ProductTypeExists::class);
         }
 
         if (null === $value || '' === $value) {

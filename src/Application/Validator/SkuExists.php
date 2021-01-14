@@ -7,14 +7,14 @@
 
 declare(strict_types=1);
 
-namespace Ergonode\Product\Infrastructure\Validator;
+namespace Ergonode\Product\Application\Validator;
 
 use Symfony\Component\Validator\Constraint;
 
 /**
  * @Annotation
  */
-class Sku extends Constraint
+class SkuExists extends Constraint
 {
-    public string $message = 'Sku is too long. It should contain 255 characters or less.';
+    public string $message = 'Product sku not exists.';
 }

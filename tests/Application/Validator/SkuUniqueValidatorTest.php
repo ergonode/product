@@ -7,12 +7,12 @@
 
 declare(strict_types=1);
 
-namespace Ergonode\Product\Tests\Infrastructure\Validator;
+namespace Ergonode\Product\Tests\Application\Validator;
 
 use Ergonode\Product\Domain\Query\ProductQueryInterface;
 use Ergonode\Product\Domain\ValueObject\Sku;
-use Ergonode\Product\Infrastructure\Validator\SkuUnique;
-use Ergonode\Product\Infrastructure\Validator\SkuUniqueValidator;
+use Ergonode\Product\Application\Validator\SkuUnique;
+use Ergonode\Product\Application\Validator\SkuUniqueValidator;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Test\ConstraintValidatorTestCase;
 use Ergonode\SharedKernel\Domain\Aggregate\ProductId;
