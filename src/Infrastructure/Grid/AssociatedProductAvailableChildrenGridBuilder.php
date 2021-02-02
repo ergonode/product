@@ -13,7 +13,6 @@ use Ergonode\Attribute\Domain\Entity\AbstractAttribute;
 use Ergonode\Attribute\Domain\Query\OptionQueryInterface;
 use Ergonode\Core\Domain\ValueObject\Language;
 use Ergonode\Designer\Domain\Query\TemplateQueryInterface;
-use Ergonode\Grid\AbstractGrid;
 use Ergonode\Grid\Column\BoolColumn;
 use Ergonode\Grid\Column\ImageColumn;
 use Ergonode\Grid\Column\LinkColumn;
@@ -26,8 +25,12 @@ use Ergonode\Grid\Filter\TextFilter;
 use Ergonode\Grid\GridConfigurationInterface;
 use Ergonode\Product\Domain\Entity\AbstractAssociatedProduct;
 use Symfony\Component\HttpFoundation\Request;
+use Ergonode\Grid\GridInterface;
+use Ergonode\Grid\GridBuilderInterface;
+use Ergonode\Grid\Grid;
+use Ergonode\Grid\Column\IdColumn;
 
-class AssociatedProductAvailableChildrenGrid extends AbstractGrid
+class AssociatedProductAvailableChildrenGridBuilder implements GridBuilderInterface
 {
     private TemplateQueryInterface $templateQuery;
 
@@ -49,26 +52,26 @@ class AssociatedProductAvailableChildrenGrid extends AbstractGrid
         $this->bindingAttributes = [];
     }
 
-    public function init(GridConfigurationInterface $configuration, Language $language): void
+    public function build(GridConfigurationInterface $configuration, Language $language): GridInterface
     {
-        $templates = [];
-        foreach ($this->templateQuery->getDictionary($language) as $key => $value) {
-            $templates[] = new LabelFilterOption($key, $value);
-        }
-        $id = new TextColumn('id', 'Id', new TextFilter());
-        $id->setVisible(false);
-        $this->addColumn('id', $id);
-        $this->addColumn('sku', new TextColumn('sku', 'Sku', new TextFilter()));
-        $this->addColumn('template_id', new SelectColumn('template_id', 'Template', new MultiSelectFilter($templates)));
-        $this->addColumn('default_label', new TextColumn('default_label', 'Default label', new TextFilter()));
-        $this->addColumn('default_image', new ImageColumn('default_image', 'Default image'));
+        $templates = $this->getTemplates($language);
+
+        $grid = new Grid();
+
         $attached = new BoolColumn('attached', 'Attached', new TextFilter());
         $attached->setEditable(true);
-        $this->addColumn('attached', $attached);
+
+        $grid
+            ->addColumn('id', new IdColumn('id'))
+            ->addColumn('sku', new TextColumn('sku', 'Sku', new TextFilter()))
+            ->addColumn('template_id', new SelectColumn('template_id', 'Template', new MultiSelectFilter($templates)))
+            ->addColumn('default_label', new TextColumn('default_label', 'Default label', new TextFilter()))
+            ->addColumn('default_image', new ImageColumn('default_image', 'Default image'))
+            ->addColumn('attached', $attached);
         if ($this->bindingAttributes) {
-            $this->addBindingColumn($language);
+            $this->addBindingColumn($grid, $language);
         }
-        $this->addColumn('_links', new LinkColumn('hal', [
+        $grid->addColumn('_links', new LinkColumn('hal', [
             'delete' => [
                 'privilege' => 'PRODUCT_UPDATE',
                 'route' => 'ergonode_product_child_remove',
@@ -80,6 +83,8 @@ class AssociatedProductAvailableChildrenGrid extends AbstractGrid
                 'method' => Request::METHOD_DELETE,
             ],
         ]));
+
+        return $grid;
     }
 
     /**
@@ -95,8 +100,17 @@ class AssociatedProductAvailableChildrenGrid extends AbstractGrid
         $this->associatedProduct = $associatedProduct;
     }
 
+    private function getTemplates(Language $language): array
+    {
+        $result = [];
+        foreach ($this->templateQuery->getDictionary($language) as $key => $value) {
+            $result[] = new LabelFilterOption($key, $value);
+        }
 
-    private function addBindingColumn(Language $language): void
+        return $result;
+    }
+
+    private function addBindingColumn(Grid $grid, Language $language): void
     {
         foreach ($this->bindingAttributes as $bindingAttribute) {
             $options = $this->optionQuery->getAll($bindingAttribute->getId());
@@ -111,7 +125,7 @@ class AssociatedProductAvailableChildrenGrid extends AbstractGrid
             }
             $attributeCode = $bindingAttribute->getCode()->getValue();
             $attributeLabel = $bindingAttribute->getLabel()->get($language);
-            $this->addColumn(
+            $grid->addColumn(
                 $attributeCode,
                 new SelectColumn($attributeCode, $attributeLabel, new MultiSelectFilter($result))
             );

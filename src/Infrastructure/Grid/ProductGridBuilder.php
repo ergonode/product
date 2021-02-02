@@ -7,27 +7,30 @@
 
 declare(strict_types=1);
 
-namespace Ergonode\Product\Infrastructure\Grid\Builder;
+namespace Ergonode\Product\Infrastructure\Grid;
 
-use Ergonode\Account\Application\Security\Security;
-use Ergonode\Attribute\Domain\Query\AttributeQueryInterface;
-use Ergonode\Attribute\Domain\Repository\AttributeRepositoryInterface;
-use Ergonode\Attribute\Domain\ValueObject\AttributeCode;
 use Ergonode\Core\Domain\ValueObject\Language;
-use Ergonode\Grid\Column\IntegerColumn;
-use Ergonode\Grid\Column\LinkColumn;
+use Ergonode\Grid\GridConfigurationInterface;
+use Ergonode\Grid\GridInterface;
+use Ergonode\Grid\GridBuilderInterface;
+use Symfony\Component\Security\Core\Exception\AuthenticationException;
+use Ergonode\Grid\Request\RequestColumn;
 use Ergonode\Grid\Column\TextColumn;
 use Ergonode\Grid\Filter\TextFilter;
-use Ergonode\Grid\GridConfigurationInterface;
-use Ergonode\Grid\Request\RequestColumn;
-use Ergonode\Product\Infrastructure\Grid\Column\Provider\AttributeColumnProvider;
+use Ergonode\Grid\Column\IntegerColumn;
 use Ergonode\SharedKernel\Domain\Aggregate\AttributeId;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Security\Core\Exception\AuthenticationException;
+use Ergonode\Attribute\Domain\ValueObject\AttributeCode;
 use Webmozart\Assert\Assert;
+use Ergonode\Grid\Column\LinkColumn;
+use Symfony\Component\HttpFoundation\Request;
+use Ergonode\Attribute\Domain\Query\AttributeQueryInterface;
+use Ergonode\Attribute\Domain\Repository\AttributeRepositoryInterface;
+use Ergonode\Product\Infrastructure\Grid\Column\Provider\AttributeColumnProvider;
 use Ergonode\Core\Domain\Query\LanguageQueryInterface;
+use Ergonode\Account\Application\Security\Security;
+use Ergonode\Grid\Column\IdColumn;
 
-class ProductGridColumnBuilder
+class ProductGridBuilder implements GridBuilderInterface
 {
     private AttributeQueryInterface $attributeQuery;
 
@@ -53,13 +56,10 @@ class ProductGridColumnBuilder
         $this->security = $security;
     }
 
-    /**
-     * @return array
-     *
-     * @throws \Exception
-     */
-    public function build(GridConfigurationInterface $configuration, Language $defaultLanguage): array
+    public function build(GridConfigurationInterface $configuration, Language $language): GridInterface
     {
+        $grid = new ProductGrid();
+
         $codes = $this->attributeQuery->getAllAttributeCodes();
 
         $user = $this->security->getUser();
@@ -77,17 +77,17 @@ class ProductGridColumnBuilder
             ],
             $configuration->getColumns()
         );
-        $id = new TextColumn('id', 'Id', new TextFilter());
-        $id->setVisible(false);
-        $result['id'] = $id;
-        $result['index'] = new IntegerColumn('index', 'Index', new TextFilter());
-        $result['sku'] = new TextColumn('sku', 'Sku', new TextFilter());
+
+        $grid
+            ->addColumn('id', new IdColumn('id'))
+            ->addColumn('index', new IntegerColumn('index', 'Index', new TextFilter()))
+            ->addColumn('sku', new TextColumn('sku', 'Sku', new TextFilter()));
 
         foreach ($columns as $column) {
             if (!array_key_exists($column->getKey(), $result)) {
                 $code = $column->getColumn();
                 $key = $column->getKey();
-                $language = $column->getLanguage() ?: $defaultLanguage;
+                $language = $column->getLanguage() ?: $language;
 
                 if (in_array($code, $codes, true)
                     && $user->hasReadLanguagePrivilege($language)
@@ -118,31 +118,31 @@ class ProductGridColumnBuilder
                             $new->setEditable(false);
                         }
                     }
-                    $result[$key] = $new;
+                    $grid->addColumn($key, $new);
                 }
             }
         }
 
-        $result['_links'] = new LinkColumn('hal', [
+        $grid->addColumn('_links', new LinkColumn('hal', [
             'get' => [
                 'route' => 'ergonode_product_read',
                 'privilege' => 'PRODUCT_READ',
-                'parameters' => ['language' => $defaultLanguage->getCode(), 'product' => '{id}'],
+                'parameters' => ['language' => $language->getCode(), 'product' => '{id}'],
             ],
             'edit' => [
                 'route' => 'ergonode_product_change',
                 'privilege' => 'PRODUCT_UPDATE',
-                'parameters' => ['language' => $defaultLanguage->getCode(), 'product' => '{id}'],
+                'parameters' => ['language' => $language->getCode(), 'product' => '{id}'],
                 'method' => Request::METHOD_PUT,
             ],
             'delete' => [
                 'route' => 'ergonode_product_delete',
                 'privilege' => 'PRODUCT_DELETE',
-                'parameters' => ['language' => $defaultLanguage->getCode(), 'product' => '{id}'],
+                'parameters' => ['language' => $language->getCode(), 'product' => '{id}'],
                 'method' => Request::METHOD_DELETE,
             ],
-        ]);
+        ]))->orderBy('index', 'DESC');
 
-        return $result;
+        return $grid;
     }
 }

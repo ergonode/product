@@ -8,12 +8,12 @@ declare(strict_types=1);
 
 namespace Ergonode\Product\Tests\Infrastructure\Grid;
 
-use Ergonode\Product\Infrastructure\Grid\ProductChildrenGrid;
+use Ergonode\Product\Infrastructure\Grid\ProductChildrenGridBuilder;
 use PHPUnit\Framework\TestCase;
 use Ergonode\Grid\GridConfigurationInterface;
 use Ergonode\Core\Domain\ValueObject\Language;
 
-class ProductChildrenGridTest extends TestCase
+class ProductChildrenGridBuilderTest extends TestCase
 {
     public function testGridInit(): void
     {
@@ -22,8 +22,8 @@ class ProductChildrenGridTest extends TestCase
         /** @var Language $language */
         $language = $this->createMock(Language::class);
 
-        $grid = new ProductChildrenGrid();
-        $grid->init($configuration, $language);
+        $builder = new ProductChildrenGridBuilder();
+        $grid = $builder->build($configuration, $language);
 
         $this->assertNotEmpty($grid->getColumns());
     }
