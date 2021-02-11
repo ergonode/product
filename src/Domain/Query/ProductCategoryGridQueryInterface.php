@@ -9,10 +9,10 @@ declare(strict_types=1);
 namespace Ergonode\Product\Domain\Query;
 
 use Ergonode\Core\Domain\ValueObject\Language;
-use Ergonode\Grid\DataSetInterface;
 use Ergonode\SharedKernel\Domain\Aggregate\ProductId;
+use Doctrine\DBAL\Query\QueryBuilder;
 
-interface ProductCategoryQueryInterface
+interface ProductCategoryGridQueryInterface
 {
-    public function getDataSetByProduct(Language $language, ProductId $productId): DataSetInterface;
+    public function getGridQuery(Language $language, ProductId $productId): QueryBuilder;
 }

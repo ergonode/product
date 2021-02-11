@@ -13,19 +13,19 @@ use Doctrine\DBAL\Connection;
 use Ergonode\Core\Domain\Query\Builder\DefaultImageQueryBuilderInterface;
 use Ergonode\Core\Domain\Query\Builder\DefaultLabelQueryBuilderInterface;
 use Ergonode\Core\Domain\Query\LanguageQueryInterface;
-use Ergonode\Product\Infrastructure\Strategy\ProductAttributeLanguageResolver;
+use Ergonode\Core\Domain\ValueObject\Language;
 use Ergonode\SharedKernel\Domain\Aggregate\ProductId;
-use Ergonode\Product\Domain\Query\ProductChildrenQueryInterface;
+use Ergonode\Product\Domain\Query\ProductChildrenGridQueryInterface;
+use Doctrine\DBAL\Query\QueryBuilder;
 
-class DbalProductChildrenQuery implements ProductChildrenQueryInterface
+class DbalProductChildrenGridQuery implements ProductChildrenGridQueryInterface
 {
+    private const PRODUCT_TABLE = 'public.product';
     private const PRODUCT_CHILDREN_TABLE = 'public.product_children';
 
     private Connection $connection;
 
     protected LanguageQueryInterface $query;
-
-    protected ProductAttributeLanguageResolver $resolver;
 
     protected DefaultLabelQueryBuilderInterface $defaultLabelQueryBuilder;
 
@@ -35,39 +35,30 @@ class DbalProductChildrenQuery implements ProductChildrenQueryInterface
         Connection $connection,
         LanguageQueryInterface $query,
         DefaultLabelQueryBuilderInterface $defaultLabelQueryBuilder,
-        DefaultImageQueryBuilderInterface $defaultImageQueryBuilder,
-        ProductAttributeLanguageResolver $resolver
+        DefaultImageQueryBuilderInterface $defaultImageQueryBuilder
     ) {
         $this->connection = $connection;
         $this->query = $query;
         $this->defaultLabelQueryBuilder = $defaultLabelQueryBuilder;
         $this->defaultImageQueryBuilder = $defaultImageQueryBuilder;
-        $this->resolver = $resolver;
     }
 
-    /**
-     * @return ProductId[]
-     */
-    public function findProductIdByProductChildrenId(ProductId $id): array
+    public function getGridQuery(ProductId $productId, Language $language): QueryBuilder
     {
-        $qb = $this->connection->createQueryBuilder()
-            ->select('pc.product_id')
-            ->from(self::PRODUCT_CHILDREN_TABLE, 'pc');
+        $info = $this->query->getLanguageNodeInfo($language);
 
-        $result = $qb
-            ->where($qb->expr()->eq('child_id', ':id'))
-            ->setParameter(':id', $id->getValue())
-            ->execute()
-            ->fetchAll(\PDO::FETCH_COLUMN);
+        $qb = $this->connection->createQueryBuilder();
 
-        if (false === $result) {
-            $result = [];
-        }
+        $qb->select('p.id, p.sku')
+            ->addSelect('product_id')
+            ->from(self::PRODUCT_CHILDREN_TABLE, 'pc')
+            ->innerJoin('pc', self::PRODUCT_TABLE, 'p', 'p.id = pc.child_id')
+            ->andWhere($qb->expr()->eq('product_id', ':product_id'))
+                ->setParameter(':product_id', $productId->getValue());
 
-        foreach ($result as &$item) {
-            $item = new ProductId($item);
-        }
+        $this->defaultLabelQueryBuilder->addSelect($qb, $info['lft'], $info['rgt']);
+        $this->defaultImageQueryBuilder->addSelect($qb, $info['lft'], $info['rgt']);
 
-        return $result;
+        return $qb;
     }
 }

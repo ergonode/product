@@ -9,10 +9,10 @@ declare(strict_types=1);
 
 namespace Ergonode\Product\Domain\Query;
 
-use Ergonode\Grid\DataSetInterface;
 use Ergonode\SharedKernel\Domain\Aggregate\ProductId;
+use Doctrine\DBAL\Query\QueryBuilder;
 
-interface HistoryQueryInterface
+interface ProductHistoryGridQueryInterface
 {
-    public function getDataSet(ProductId $id): DataSetInterface;
+    public function getGridQuery(ProductId $id): QueryBuilder;
 }
