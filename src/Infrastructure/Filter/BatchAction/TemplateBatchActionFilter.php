@@ -1,5 +1,6 @@
 <?php
-/*
+
+/**
  * Copyright © Bold Brand Commerce Sp. z o.o. All rights reserved.
  * See LICENSE.txt for license details.
  */
@@ -8,50 +9,41 @@ declare(strict_types=1);
 
 namespace Ergonode\Product\Infrastructure\Filter\BatchAction;
 
+use Doctrine\DBAL\Connection;
 use Ergonode\BatchAction\Domain\ValueObject\BatchActionFilterInterface;
-use Ergonode\BatchAction\Domain\ValueObject\BatchActionType;
-use Ergonode\BatchAction\Infrastructure\Provider\BatchActionFilterIdsInterface;
 use Ergonode\Product\Infrastructure\Provider\FilteredQueryBuilder;
-use Ergonode\SharedKernel\Domain\Aggregate\ProductId;
+use Ergonode\SharedKernel\Domain\Aggregate\TemplateId;
 
-class ProductBatchActionFilter implements BatchActionFilterIdsInterface
+class TemplateBatchActionFilter
 {
-    private const TYPES = [
-        'product_delete',
-        'product_edit',
-    ];
-
-    /**
-     * @var string []
-     */
-    private array $types;
-
     private FilteredQueryBuilder $filteredQueryBuilder;
+
+    private Connection $connection;
 
     public function __construct(
         FilteredQueryBuilder $filteredQueryBuilder,
-        ?array $types = []
+        Connection $connection
     ) {
         $this->filteredQueryBuilder = $filteredQueryBuilder;
-        $this->types = $types ?: self::TYPES;
-    }
-
-    public function supports(BatchActionType $type): bool
-    {
-        return in_array($type->getValue(), $this->types, true);
+        $this->connection = $connection;
     }
 
     /**
-     * @return ProductId[]
+     * @return TemplateId[]
      */
     public function filter(BatchActionFilterInterface $filter): array
     {
         $filteredQueryBuilder = $this->filteredQueryBuilder->build($filter);
 
-        $result = $filteredQueryBuilder->execute()->fetchAll(\PDO::FETCH_COLUMN);
+        $queryBuilder = $this->connection->createQueryBuilder();
+        $queryBuilder->select('DISTINCT template_id')
+            ->from('public.product', 'pt')
+            ->join('pt', (sprintf('(%s)', $filteredQueryBuilder->getSQL())), 'pp', 'pp.id = pt.id')
+            ->setParameters($filteredQueryBuilder->getParameters(), $filteredQueryBuilder->getParameterTypes());
+        $result = $queryBuilder->execute()->fetchAll(\PDO::FETCH_COLUMN);
 
         return array_map(
-            fn (string $item) => new ProductId($item),
+            fn (string $id) => new TemplateId($id),
             $result,
         );
     }
